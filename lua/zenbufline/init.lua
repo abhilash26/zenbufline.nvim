@@ -53,7 +53,6 @@ M.set_tabline = vim.schedule_wrap(function()
           sections_cache["left"],
           is_active and sections_cache["active"] or sections_cache["inactive"],
           string.format(" %s%s ", fname, modified),
-          modified,
           sections_cache["right"],
           sections_cache["bg"]
         ))
