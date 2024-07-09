@@ -39,6 +39,9 @@ M.set_tabline = vim.schedule_wrap(function()
   table.insert(line_parts, sections_cache["bg"])
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
     if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buflisted then
+      if vim.tbl_contains(o.exclude_fts, vim.bo[buf].ft) then
+        goto continue
+      end
       local modified = vim.bo[buf].modified and o.modified or ""
       local fname = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":t");
       local is_active = buf == vim.api.nvim_get_current_buf()
@@ -52,6 +55,7 @@ M.set_tabline = vim.schedule_wrap(function()
           sections_cache["bg"]
         ))
     end
+    ::continue::
   end
   vim.o.tabline = table.concat(line_parts, " ")
 end)

@@ -15,5 +15,11 @@ return {
     italic = false,
     bold = false,
   },
-  exclude_fts = {},
+  exclude_fts = {
+    "neotree",
+    "NvimTree",
+    "Alpha",
+    "dashboard",
+    "help"
+  }
 }
