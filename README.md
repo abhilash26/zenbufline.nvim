@@ -1,6 +1,9 @@
 # zenbufline.nvim
 A minimal lua based buffer line for neovim
 
+![image](https://github.com/abhilash26/zenbufline.nvim/assets/28080925/1c25e6b0-04c4-4e57-975f-db5abfbac495)
+
+
 ### 🚧 WIP 🚧
 
 ## Requirements
