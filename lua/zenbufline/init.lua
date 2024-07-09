@@ -3,6 +3,9 @@ local default_options = require("zenbufline.default_options")
 local o = {}
 local sections_cache = {}
 
+-- Cache frequently used globals
+local api = vim.api
+
 local get_hl = function(hl)
   return string.format("%%#%s#", hl)
 end
@@ -10,9 +13,9 @@ end
 M = {}
 
 M.define_highlights = function()
-  local status = vim.api.nvim_get_hl(0, { name = "StatusLine" })
-  local normal = vim.api.nvim_get_hl(0, { name = "Normal" })
-  local comment = vim.api.nvim_get_hl(0, { name = "Comment" })
+  local status = api.nvim_get_hl(0, { name = "StatusLine" })
+  local normal = api.nvim_get_hl(0, { name = "Normal" })
+  local comment = api.nvim_get_hl(0, { name = "Comment" })
   local hls = {
     ["ZenbuflineBuffer"] = { link = "StatusLine" },
     ["ZenbuflineNormal"] = { fg = normal.bg, bg = status.bg },
@@ -30,26 +33,26 @@ M.define_highlights = function()
     },
   }
   for hl, options in pairs(hls) do
-    vim.api.nvim_set_hl(0, hl, options)
+    api.nvim_set_hl(0, hl, options)
   end
 end
 
 M.set_tabline = vim.schedule_wrap(function()
   local line_parts = {}
   table.insert(line_parts, sections_cache["bg"])
-  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buflisted then
+  for _, buf in ipairs(api.nvim_list_bufs()) do
+    if api.nvim_buf_is_valid(buf) and vim.bo[buf].buflisted then
       if vim.tbl_contains(o.exclude_fts, vim.bo[buf].ft) then
         goto continue
       end
       local modified = vim.bo[buf].modified and o.modified or ""
-      local fname = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":t");
-      local is_active = buf == vim.api.nvim_get_current_buf()
+      local fname = vim.fn.fnamemodify(api.nvim_buf_get_name(buf), ":t");
+      local is_active = buf == api.nvim_get_current_buf()
       table.insert(line_parts,
         string.format("%s%s%s%s%s",
           sections_cache["left"],
           is_active and sections_cache["active"] or sections_cache["inactive"],
-          string.format(" %s ", fname),
+          string.format(" %s%s ", fname, modified),
           modified,
           sections_cache["right"],
           sections_cache["bg"]
@@ -74,15 +77,15 @@ M.merge_config = function(opts)
 end
 
 M.create_autocommands = function()
-  local augroup = vim.api.nvim_create_augroup("Zenbufline", { clear = true })
+  local augroup = api.nvim_create_augroup("Zenbufline", { clear = true })
 
   -- create statusline
-  vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave", "BufDelete", "BufModifiedSet" }, {
+  api.nvim_create_autocmd({ "BufEnter", "BufLeave", "BufDelete", "BufModifiedSet" }, {
     group = augroup,
     callback = M.set_tabline,
     desc = "set tabline"
   })
-  vim.api.nvim_create_autocmd({ "ColorScheme" }, {
+  api.nvim_create_autocmd({ "ColorScheme" }, {
     group = augroup,
     callback = M.define_highlights,
     desc = "update highlights"
