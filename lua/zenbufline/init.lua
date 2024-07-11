@@ -1,7 +1,7 @@
 local plugin_loaded = false
 local default_options = require("zenbufline.config")
 local o = default_options
-local sec_cache = { left = "", right = "", active = "", inactive = "", bg = "" }
+local cache = { left = "", right = "", active = "", inactive = "", bg = "" }
 local hls = {
   ["ZenbuflineBuffer"] = "%#ZenbuflineBuffer#",
   ["ZenbuflineNormal"] = "%#ZenbuflineNormal#",
@@ -32,7 +32,7 @@ M.define_highlights = function()
 end
 
 M.set_tabline = vim.schedule_wrap(function()
-  local line_parts = { sec_cache["bg"] }
+  local line_parts = { cache["bg"] }
   local cur_buf = api.nvim_get_current_buf()
   local exclude_fts = o.exclude_fts
 
@@ -43,11 +43,11 @@ M.set_tabline = vim.schedule_wrap(function()
         local modified = bo.modified and o.modified or ""
         local fname = vim.fn.fnamemodify(api.nvim_buf_get_name(buf), ":t");
         line_parts[#line_parts + 1] = table.concat({
-          sec_cache["left"],
-          (buf == cur_buf) and sec_cache["active"] or sec_cache["inactive"],
+          cache["left"],
+          cache[(buf == cur_buf) and "active" or "inactive"],
           string.format(" %s%s ", fname, modified),
-          sec_cache["right"],
-          sec_cache["bg"]
+          cache["right"],
+          cache["bg"]
         }, "")
       end
     end
@@ -56,11 +56,11 @@ M.set_tabline = vim.schedule_wrap(function()
 end)
 
 M.cache_sections = function()
-  sec_cache["left"] = string.format("%s%s", get_hl(o.left.hl), o.left.icon)
-  sec_cache["right"] = string.format("%s%s", get_hl(o.right.hl), o.right.icon)
-  sec_cache["active"] = get_hl(o.active.hl)
-  sec_cache["inactive"] = get_hl(o.inactive.hl)
-  sec_cache["bg"] = get_hl(o.hl)
+  cache["left"] = string.format("%s%s", get_hl(o.left.hl), o.left.icon)
+  cache["right"] = string.format("%s%s", get_hl(o.right.hl), o.right.icon)
+  cache["active"] = get_hl(o.active.hl)
+  cache["inactive"] = get_hl(o.inactive.hl)
+  cache["bg"] = get_hl(o.hl)
 end
 
 M.merge_config = function(opts)
