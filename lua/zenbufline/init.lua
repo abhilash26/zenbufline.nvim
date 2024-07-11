@@ -1,7 +1,13 @@
 local plugin_loaded = false
-local default_options = require("zenbufline.default_options")
-local o = {}
-local sections_cache = {}
+local default_options = require("zenbufline.config")
+local o = default_options
+local sections_cache = { left = "", right = "", active = "", inactive = "", bg = "" }
+local hls = {
+  ["ZenbuflineBuffer"] = { txt = "%#ZenbuflineBuffer#", hl = {} },
+  ["ZenbuflineNormal"] = { txt = "%#ZenbuflineNormal#", hl = {} },
+  ["ZenbuflineInactive"] = { txt = "%#ZenbuflineInactive#", hl = {} },
+  ["ZenbuflineActive"] = { txt = "%#ZenbuflineActive#", hl = {} },
+}
 
 -- Cache frequently used globals
 local api = vim.api
@@ -16,6 +22,11 @@ M.define_highlights = function()
   local status = api.nvim_get_hl(0, { name = "StatusLine" })
   local normal = api.nvim_get_hl(0, { name = "Normal" })
   local comment = api.nvim_get_hl(0, { name = "Comment" })
+
+  for hl, data in pairs(hls) do
+
+  end
+
   local hls = {
     ["ZenbuflineBuffer"] = { link = "StatusLine" },
     ["ZenbuflineNormal"] = { fg = normal.bg, bg = status.bg },

@@ -34,4 +34,4 @@ A minimal lua based buffer line for neovim
 require("zenbufline").setup()
 ```
 ### Click to see default configuration
- Default configuration is here [options](https://github.com/abhilash26/zenbufline.nvim/blob/main/lua/zenbufline/default_options.lua)
+ Default configuration is here [options](https://github.com/abhilash26/zenbufline.nvim/blob/main/lua/zenbufline/config.lua)
