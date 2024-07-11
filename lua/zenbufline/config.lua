@@ -2,9 +2,15 @@ return {
   line_start = "",
   line_end = "",
   modified = " [+] ",
-  left = "",
-  right = "",
-  hl = "ZenbuflineNormal",
+  hl = "ZenbuflineBuffer",
+  left = {
+    hl = "ZenbuflineNormal",
+    icon = "",
+  },
+  right = {
+    hl = "ZenbuflineNormal",
+    icon = ""
+  },
   active = {
     hl = "ZenbuflineActive",
     italic = false,

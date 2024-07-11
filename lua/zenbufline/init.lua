@@ -1,19 +1,19 @@
 local plugin_loaded = false
 local default_options = require("zenbufline.config")
 local o = default_options
-local sections_cache = { left = "", right = "", active = "", inactive = "", bg = "" }
+local sec_cache = { left = "", right = "", active = "", inactive = "", bg = "" }
 local hls = {
-  ["ZenbuflineBuffer"] = { txt = "%#ZenbuflineBuffer#", hl = {} },
-  ["ZenbuflineNormal"] = { txt = "%#ZenbuflineNormal#", hl = {} },
-  ["ZenbuflineInactive"] = { txt = "%#ZenbuflineInactive#", hl = {} },
-  ["ZenbuflineActive"] = { txt = "%#ZenbuflineActive#", hl = {} },
+  ["ZenbuflineBuffer"] = "%#ZenbuflineBuffer#",
+  ["ZenbuflineNormal"] = "%#ZenbuflineNormal#",
+  ["ZenbuflineInactive"] = "%#ZenbuflineInactive#",
+  ["ZenbuflineActive"] = "%#ZenbuflineActive#",
 }
 
 -- Cache frequently used globals
 local api = vim.api
 
 local get_hl = function(hl)
-  return string.format("%%#%s#", hl)
+  return hls[hl] or string.format("%%#%s#", hl)
 end
 
 M = {}
@@ -23,62 +23,44 @@ M.define_highlights = function()
   local normal = api.nvim_get_hl(0, { name = "Normal" })
   local comment = api.nvim_get_hl(0, { name = "Comment" })
 
-  for hl, data in pairs(hls) do
-
-  end
-
-  local hls = {
-    ["ZenbuflineBuffer"] = { link = "StatusLine" },
-    ["ZenbuflineNormal"] = { fg = normal.bg, bg = status.bg },
-    ["ZenbuflineInactive"] = {
-      fg = comment.fg,
-      bg = normal.bg,
-      bold = o.inactive.bold,
-      italic = o.inactive.italic,
-    },
-    ["ZenbuflineActive"] = {
-      fg = normal.fg,
-      bg = normal.bg,
-      bold = o.active.bold,
-      italic = o.active.italic,
-    },
-  }
-  for hl, options in pairs(hls) do
-    api.nvim_set_hl(0, hl, options)
-  end
+  api.nvim_set_hl(0, "ZenbuflineBuffer", { link = "StatusLine" })
+  api.nvim_set_hl(0, "ZenbuflineNormal", { fg = normal.bg, bg = status.bg })
+  api.nvim_set_hl(0, "ZenbuflineInactive",
+    { fg = comment.fg, bg = normal.bg, bold = o.inactive.bold, italic = o.inactive.italic })
+  api.nvim_set_hl(0, "ZenbuflineActive",
+    { fg = normal.fg, bg = normal.bg, bold = o.active.bold, italic = o.active.italic })
 end
 
 M.set_tabline = vim.schedule_wrap(function()
-  local line_parts = {}
-  table.insert(line_parts, sections_cache["bg"])
+  local line_parts = { sec_cache["bg"] }
+  local cur_buf = api.nvim_get_current_buf()
+  local exclude_fts = o.exclude_fts
+
   for _, buf in ipairs(api.nvim_list_bufs()) do
-    if api.nvim_buf_is_valid(buf) and vim.bo[buf].buflisted then
-      if vim.tbl_contains(o.exclude_fts, vim.bo[buf].ft) then
-        goto continue
-      end
-      local modified = vim.bo[buf].modified and o.modified or ""
-      local fname = vim.fn.fnamemodify(api.nvim_buf_get_name(buf), ":t");
-      local is_active = buf == api.nvim_get_current_buf()
-      table.insert(line_parts,
-        string.format("%s%s%s%s%s",
-          sections_cache["left"],
-          is_active and sections_cache["active"] or sections_cache["inactive"],
+    local bo = vim.bo[buf]
+    if api.nvim_buf_is_valid(buf) and bo.buflisted then
+      if not vim.tbl_contains(exclude_fts, bo.ft) then
+        local modified = bo.modified and o.modified or ""
+        local fname = vim.fn.fnamemodify(api.nvim_buf_get_name(buf), ":t");
+        line_parts[#line_parts + 1] = table.concat({
+          sec_cache["left"],
+          (buf == cur_buf) and sec_cache["active"] or sec_cache["inactive"],
           string.format(" %s%s ", fname, modified),
-          sections_cache["right"],
-          sections_cache["bg"]
-        ))
+          sec_cache["right"],
+          sec_cache["bg"]
+        }, "")
+      end
     end
-    ::continue::
   end
   vim.o.tabline = table.concat(line_parts, " ")
 end)
 
 M.cache_sections = function()
-  sections_cache["left"] = string.format("%s%s", get_hl("ZenbuflineNormal"), o.left)
-  sections_cache["right"] = string.format("%s%s", get_hl("ZenbuflineNormal"), o.right)
-  sections_cache["active"] = get_hl("ZenbuflineActive")
-  sections_cache["inactive"] = get_hl("ZenbuflineInactive")
-  sections_cache["bg"] = get_hl("ZenbuflineBuffer")
+  sec_cache["left"] = string.format("%s%s", get_hl(o.left.hl), o.left.icon)
+  sec_cache["right"] = string.format("%s%s", get_hl(o.right.hl), o.right.icon)
+  sec_cache["active"] = get_hl(o.active.hl)
+  sec_cache["inactive"] = get_hl(o.inactive.hl)
+  sec_cache["bg"] = get_hl(o.hl)
 end
 
 M.merge_config = function(opts)
