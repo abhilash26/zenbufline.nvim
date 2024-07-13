@@ -18,14 +18,7 @@ return {
 	},
 	inactive = {
 		hl = "ZenBuflineInactive",
-		italic = false,
+		italic = true,
 		bold = false,
-	},
-	exclude_fts = {
-		"neotree",
-		"NvimTree",
-		"Alpha",
-		"dashboard",
-		"help",
 	},
 }
