@@ -3,7 +3,6 @@ local default_options = require("zenbufline.config")
 local o = default_options
 local cache = {}
 local hls = {}
-local line_part = {}
 
 -- Cache frequently used globals
 local api = vim.api
@@ -20,7 +19,7 @@ local buffer_cache = {
 local update_pending = false
 local update_timer = nil
 
-M = {}
+local M = {}
 
 -- Performance: Cache buffer list
 local function rebuild_buffer_cache()
@@ -155,6 +154,11 @@ M.close_current_buffer = function()
 		return
 	end
 
+	-- Rebuild cache if needed before checking list length
+	if buffer_cache.dirty then
+		rebuild_buffer_cache()
+	end
+
 	-- Switch to next buffer if there are others
 	if #buffer_cache.list > 1 then
 		M.next_buffer()
@@ -278,7 +282,7 @@ M.set_tabline = function()
 			local close_btn = ""
 			if o.show_close_button then
 				close_btn = string.format(
-					" %%#ZenbuflineClose%%%%%d@v:lua.require'zenbufline'.close_buffer_click@%s%%X",
+					" %%#ZenbuflineClose#%%%d@v:lua.require'zenbufline'.close_buffer_click@%s%%X",
 					buf,
 					o.close_icon
 				)
@@ -313,8 +317,16 @@ M.set_tabline = function()
 
 	-- Add buffer count if enabled
 	if o.show_buffer_count then
+		-- Find current buffer position in list
+		local cur_pos = 1
+		for i, buf in ipairs(list) do
+			if buf == cur_buf then
+				cur_pos = i
+				break
+			end
+		end
 		parts_count = parts_count + 1
-		tabline_parts[parts_count] = string.format("%s %%=%s [%d/%d] ", cache["bg"], cache["bg"], #list, #list)
+		tabline_parts[parts_count] = string.format("%s %%=%s [%d/%d] ", cache["bg"], cache["bg"], cur_pos, #list)
 	end
 
 	vim.o.tabline = table.concat(tabline_parts, "")
@@ -330,17 +342,32 @@ local function schedule_update()
 
 	-- Cancel existing timer
 	if update_timer then
-		update_timer:stop()
-		update_timer:close()
+		if not update_timer:is_closing() then
+			update_timer:stop()
+			update_timer:close()
+		end
 		update_timer = nil
 	end
 
-	-- Schedule update
-	update_timer = vim.defer_fn(function()
-		M.set_tabline()
-		update_pending = false
-		update_timer = nil
-	end, o.debounce_ms or 15)
+	-- Schedule update using vim.uv timer
+	update_timer = vim.uv.new_timer()
+	if update_timer then
+		update_timer:start(o.debounce_ms or 15, 0, vim.schedule_wrap(function()
+			if update_timer and not update_timer:is_closing() then
+				update_timer:stop()
+				update_timer:close()
+			end
+			update_timer = nil
+			M.set_tabline()
+			update_pending = false
+		end))
+	else
+		-- Fallback to vim.defer_fn if timer creation fails
+		vim.defer_fn(function()
+			M.set_tabline()
+			update_pending = false
+		end, o.debounce_ms or 15)
+	end
 end
 
 M.cache_sections = function()
@@ -352,8 +379,6 @@ M.cache_sections = function()
 	cache["active"] = get_hl(o.active.hl)
 	cache["inactive"] = get_hl(o.inactive.hl)
 	cache["bg"] = get_hl(o.hl)
-	-- @stylua : ignore
-	line_part = { cache["bg"], cache["left"], cache["inactive"], " New ", "", cache["right"], cache["bg"] }
 end
 
 M.merge_config = function(opts)
